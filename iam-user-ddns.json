@@ -1,0 +1,62 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Creates IAM User for DDNS updates from e.g. pfSense",
+    "Parameters":{
+        "HostedZoneId": {
+            "Description": "Hosted Zone ID for zone containing record to update",
+            "Type": "String"
+        },
+        "IamUserName": {
+            "Description": "Name to assign to new IAM User (requires CAPABILITY_NAMED_IAM)",
+            "Type": "String",
+            "AllowedPattern": "[\\w+=,.@-]+"
+        }
+    },
+    "Resources": {
+        "FireflyDDNSUser": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "UserName": {
+                    "Ref": "IamUserName"
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "IamUserName"
+                                    },
+                                    "ddns-policy"
+                                ]
+                            ]
+                        },
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "route53:ChangeResourceRecordSets",
+                                    "route53:ListResourceRecordSets"
+                                ],
+                                "Resource": {
+                                    "Fn::Join": [
+                                        "/",
+                                        [
+                                            "arn:aws:route53:::hostedzone",
+                                            {
+                                                "Ref": "HostedZoneId"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
