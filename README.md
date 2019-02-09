@@ -1,18 +1,20 @@
 # Overview
 
-Whilst this is a guide to configuring dynamic DNS on pfSense because that's what I use, the CloudFormation template creates an IAM user with the correct permissions to generically perform a DNS update so can be used for any DDNS provision that supports AWS. Even roll your own with aws cli or one of the SDKs.
+Whilst this is a guide to configuring Dynamic DNS (DDNS) on pfSense because that's what I use, the CloudFormation template creates an IAM user with the correct permissions to generically perform a DNS update so can be used for any DDNS provision that supports AWS. Even roll your own with aws cli or one of the SDKs.
 
 # What is Dynamic DNS
 
-DynDNS is a service that translates your external IP Address into an URL like yourcompany.dyndns.org
+[Dynamic DNS](https://en.wikipedia.org/wiki/Dynamic_DNS) is a service that translates your external IP Address into an URL like yourcompany.dyndns.org
 
 If you have a static IP from your provider, you will not need DynDNS necessarily, since you can just update the record directly in the knowledge that the underlying IP will not change.
 
 Most of you, at least for private usage, will have an external IP Address that changes every so often at your service provider's whim, so it would be impossible to reach your internal network after a change to your IP Address.
 
-This is where DynDNS comes into play.
+This is where DDNS comes into play.
 
-Each time your IP address gets changed by your service provider, pfSense will tell your DynDNS provider your new IP Address automatically, in this case Route 53.
+Each time your IP address gets changed by your service provider, pfSense will tell your DDNS provider your new IP Address automatically, in this case Route 53.
+
+Note that there is a cost associated with Route 53, albeit fairly small. You'd only want to use Route 53 if you already have an AWS account. Free providers exist, such as [No-IP](https://www.noip.com/free) or [freeDNS](http://freedns.afraid.org/).
 
 # Setup
 
@@ -49,7 +51,7 @@ Now you set up pfSense to do the heavy lifting.
 4. Fill out the form as follows. Only the fields listed here require values.
 * `Service Type` - `Route 53`
 * `Interface to monitor` - Select `WAN`, or whichever interface is connected to your service provider's modem/router.
-* `Hostname` - Enter the fully qualified name of the record you which to be updated, e.g. `www.mycompany.org`
+* `Hostname` - Enter the fully qualified name of the record you which to be updated, e.g. `www.mycompany.org`. If the record doesn't yet exist, pfSense will create an [A record](https://support.dnsimple.com/articles/a-record/) for you.
 * `Username` - Enter the Access Key ID you created above.
 * `Password` - Enter the Secret Access Key from above.
 * `Zone ID` - There have been different reports as to what works here. One of the following should work. Either just the Hosted Zone ID, or the Hosted Zone ID prefixed with `us-east-1/`. Note that it must be `us-east-1` and not any other region. The latter is working for me.
@@ -70,12 +72,12 @@ If there is an issue with the DNS update, the Cached IP column will show the IP 
 ```xml
 <?xml version="1.0"?>
 <ErrorResponse xmlns="https://route53.amazonaws.com/doc/2013-04-01/">
-<Error>
-<Type>Sender</Type>
-<Code>SignatureDoesNotMatch</Code>
-<Message>Credential should be scoped to a valid region, not 'eu-west-1'. </Message>
-</Error>
-<RequestId>112208b4-2bec-11e9-b72a-d74051dabb6f</RequestId>
+ <Error>
+  <Type>Sender</Type>
+  <Code>SignatureDoesNotMatch</Code>
+  <Message>Credential should be scoped to a valid region, not 'eu-west-1'. </Message>
+ </Error>
+ <RequestId>112208b4-2bec-11e9-b72a-d74051dabb6f</RequestId>
 </ErrorResponse>
 ```
 This indicates an issue with the Zone ID field in the configuration. Review step 4 above. If you have included a region with the zone ID, it must be `us-east-1`, irresepctive of what your preferred region is for deploying resources.
@@ -86,12 +88,12 @@ Account and Zone IDs redacted.
 
 ```xml
 <ErrorResponse xmlns="https://route53.amazonaws.com/doc/2013-04-01/">
-<Error>
-<Type>Sender</Type>
-<Code>AccessDenied</Code>
-<Message>User: arn:aws:iam::000000000000:user/test-ddns is not authorized to perform: route53:ChangeResourceRecordSets on resource: arn:aws:route53:::hostedzone/Zxxxxxxxxxxxx</Message>
-</Error>
-<RequestId>e8048f80-2c41-11e9-8a34-7b4695c088ab</RequestId>
+ <Error>
+  <Type>Sender</Type>
+  <Code>AccessDenied</Code>
+  <Message>User: arn:aws:iam::000000000000:user/test-ddns is not authorized to perform: route53:ChangeResourceRecordSets on resource: arn:aws:route53:::hostedzone/Zxxxxxxxxxxxx</Message>
+ </Error>
+ <RequestId>e8048f80-2c41-11e9-8a34-7b4695c088ab</RequestId>
 </ErrorResponse>
 ```
 
