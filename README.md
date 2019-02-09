@@ -47,14 +47,14 @@ Now you set up pfSense to do the heavy lifting.
 2. From the `Services` menu, select `Dynamic DNS`.
 3. Press the Add button to create a new Dynamic DNS service.
 4. Fill out the form as follows. Only the fields listed here require values.
-4.1 `Service Type` - `Route 53`
-4.2 `Interface to monitor` - Select `WAN`, or whichever interface is connected to your service provider's modem/router.
-4.3 `Hostname` - Enter the fully qualified name of the record you which to be updated, e.g. `www.mycompany.org`
-4.4 `Username` - Enter the Access Key ID you created above.
-4.5 `Password` - Enter the Secret Access Key from above.
-4.6 `Zone ID` - There have been different reports as to what works here. One of the following should work. Either just the Hosted Zone ID, or the Hosted Zone ID prefixed with `us-east-1/`. Note that it must be `us-east-1` and not any other region. The latter is working for me.
-4.7 `TTL` - Choose a TTL value, e.g. 300 (5 min)
-4.8 `Description` - Anything you want, or leave blank.
+* `Service Type` - `Route 53`
+* `Interface to monitor` - Select `WAN`, or whichever interface is connected to your service provider's modem/router.
+* `Hostname` - Enter the fully qualified name of the record you which to be updated, e.g. `www.mycompany.org`
+* `Username` - Enter the Access Key ID you created above.
+* `Password` - Enter the Secret Access Key from above.
+* `Zone ID` - There have been different reports as to what works here. One of the following should work. Either just the Hosted Zone ID, or the Hosted Zone ID prefixed with `us-east-1/`. Note that it must be `us-east-1` and not any other region. The latter is working for me.
+* `TTL` - Choose a TTL value, e.g. 300 (5 min)
+* `Description` - Anything you want, or leave blank.
 5. Save the configuration and the DNS update should soon happen. Your external IP should then show up green in the Cached IP column.
 
 ## Troubleshooting
@@ -78,7 +78,7 @@ If there is an issue with the DNS update, the Cached IP column will show the IP 
 <RequestId>112208b4-2bec-11e9-b72a-d74051dabb6f</RequestId>
 </ErrorResponse>
 ```
-This indicates an issue with the Zone ID field in the configuration. Review step 4.6 above. If you have included a region with the zone ID, it must be `us-east-1`, irresepctive of what your preferred region is for deploying resources.
+This indicates an issue with the Zone ID field in the configuration. Review step 4 above. If you have included a region with the zone ID, it must be `us-east-1`, irresepctive of what your preferred region is for deploying resources.
 
 ### Error log example 2
 
