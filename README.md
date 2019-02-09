@@ -55,7 +55,7 @@ Now you set up pfSense to do the heavy lifting.
 * `Username` - Enter the Access Key ID you created above.
 * `Password` - Enter the Secret Access Key from above.
 * `Zone ID` - There have been different reports as to what works here. One of the following should work. Either just the Hosted Zone ID, or the Hosted Zone ID prefixed with `us-east-1/`. Note that it must be `us-east-1` and not any other region. The latter is working for me.
-* `TTL` - Choose a TTL value, e.g. 300 (5 min)
+* `TTL` - Choose a [TTL value](https://en.wikipedia.org/wiki/Time_to_live#DNS_records), e.g. 300 (5 min)
 * `Description` - Anything you want, or leave blank.
 5. Save the configuration and the DNS update should soon happen. Your external IP should then show up green in the Cached IP column.
 
