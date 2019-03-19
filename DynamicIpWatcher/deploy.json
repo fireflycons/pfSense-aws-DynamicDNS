@@ -6,7 +6,7 @@
             "Environment": [
                 {
                     "Name": "HOST_NAMES",
-                    "Value": "test.firefly-it.uk"
+                    "Value": "test.yourhost.com"
                 },
                 {
                     "Name": "AWS_POWERSHELL_FUNCTION_HANDLER",
