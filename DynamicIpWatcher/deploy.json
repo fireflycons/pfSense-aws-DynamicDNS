@@ -1,0 +1,41 @@
+{
+    "StackName": "dynamic-ip-watcher",
+    "Lambdas": [
+        {
+            "Name": "DynamicIpWatcherLambda",
+            "Environment": [
+                {
+                    "Name": "HOST_NAMES",
+                    "Value": "test.firefly-it.uk"
+                },
+                {
+                    "Name": "AWS_POWERSHELL_FUNCTION_HANDLER",
+                    "Value": "Invoke-Lambda"
+                },
+                {
+                    "Name": "SSM_KEY_PATH",
+                    "Value": "/DynamicIpWatcher"
+                },
+                {
+                    "Name": "TOPIC_ARNS",
+                    "Value": "${Stack.Outputs.DynamicIpUpdateTopic}"
+                }
+            ],
+            "Role": "DynamicIpWatcherRole",
+            "Timeout": "10",
+            "MemorySize": "512"
+        },
+        {
+            "Name": "SecurityGroupUpdaterLambda",
+            "Environment": [
+                {
+                    "Name": "AWS_POWERSHELL_FUNCTION_HANDLER",
+                    "Value": "Invoke-Lambda"
+                }
+            ],
+            "Role": "SecurityGroupUpdaterRole",
+            "Timeout": "10",
+            "MemorySize": "512"
+        }
+    ]
+}

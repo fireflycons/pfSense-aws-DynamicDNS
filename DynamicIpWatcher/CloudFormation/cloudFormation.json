@@ -1,0 +1,272 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Dynamic IP Watcher",
+    "Parameters": {
+        "DynamicIpWatcherLambdaMemorySize": {
+            "Description": "Memory to assign to this function",
+            "Type": "Number",
+            "Default": "512"
+        },
+        "DynamicIpWatcherLambdaTimeout": {
+            "Description": "Timeout to assign to this function",
+            "Type": "Number",
+            "Default": "10"
+        },
+        "SecurityGroupUpdaterLambdaMemorySize": {
+            "Description": "Memory to assign to this function",
+            "Type": "Number",
+            "Default": "512"
+        },
+        "SecurityGroupUpdaterLambdaTimeout": {
+            "Description": "Timeout to assign to this function",
+            "Type": "Number",
+            "Default": "10"
+        }
+    },
+    "Resources": {
+        "DynamicIpWatcherRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "DynamicIpWatcherPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "ssm:GetParameter",
+                                        "ssm:PutParameter"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Ref": "DynamicIpUpdateTopic"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "iam:ListAccountAliases"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "DynamicIpWatcherLambda": {
+            "Metadata": {
+                "Notes": "A placehoder nodejs lambda is created here to permit wiring up SNS. It is later replaced with the PowerShell code"
+            },
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "ZipFile": "module.exports.handler = (event, context) => { console.log('placeholder function') }"
+                },
+                "Description": "Watches DNS for IP change. Sends SNS message when chage detected.",
+                "Handler": "index.handler",
+                "MemorySize": {
+                    "Ref": "DynamicIpWatcherLambdaMemorySize"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "DynamicIpWatcherRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "nodejs8.10",
+                "Timeout": {
+                    "Ref": "DynamicIpWatcherLambdaTimeout"
+                }
+            }
+        },
+        "DynamicIpWatcherScheduleRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Schedule to poll for IP changes",
+                "ScheduleExpression": "rate(5 minutes)",
+                "State": "ENABLED",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "DynamicIpWatcherLambda",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "TargetDynamicIpWatcherLambda"
+                    }
+                ]
+            }
+        },
+        "DynamicIpWatcherLambdaInvokePermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Ref": "DynamicIpWatcherLambda"
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "DynamicIpWatcherScheduleRule",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "DynamicIpUpdateTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "Subscription": [
+                    {
+                        "Endpoint": {
+                            "Fn::GetAtt": [
+                                "SecurityGroupUpdaterLambda",
+                                "Arn"
+                            ]
+                        },
+                        "Protocol": "lambda"
+                    }
+                ]
+            }
+        },
+        "SecurityGroupUpdaterRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "SecurityGroupUpdaterPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "ec2:DescribeSecurityGroups",
+                                        "ec2:AuthorizeSecurityGroupIngress",
+                                        "ec2:AuthorizeSecurityGroupEgress",
+                                        "ec2:RevokeSecurityGroupIngress",
+                                        "ec2:RevokeSecurityGroupEgress"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SecurityGroupUpdaterLambda": {
+            "Metadata": {
+                "Notes": "A placehoder nodejs lambda is created here to permit wiring up SNS. It is later replaced with the PowerShell code"
+            },
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "ZipFile": "module.exports.handler = (event, context) => { console.log('placeholder function') }"
+                },
+                "Description": "Responds to notifications from DynamicIpWatcherLambda. Adjusts security groups to new IP.",
+                "Handler": "index.handler",
+                "MemorySize": {
+                    "Ref": "SecurityGroupUpdaterLambdaMemorySize"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "SecurityGroupUpdaterRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "nodejs8.10",
+                "Timeout": {
+                    "Ref": "SecurityGroupUpdaterLambdaTimeout"
+                }
+            }
+        },
+        "SecurityGroupUpdaterLambdaInvokePermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SecurityGroupUpdaterLambda",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "sns.amazonaws.com",
+                "SourceArn": {
+                    "Ref": "DynamicIpUpdateTopic"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "DynamicIpWatcherLambda": {
+            "Description": "Generated function name",
+            "Value": {
+                "Ref": "DynamicIpWatcherLambda"
+            }
+        },
+        "SecurityGroupUpdaterLambda": {
+            "Description": "Generated function name",
+            "Value": {
+                "Ref": "SecurityGroupUpdaterLambda"
+            }
+        },
+        "DynamicIpUpdateTopic": {
+            "Description": "Arn of notification topic",
+            "Value": {
+                "Ref": "DynamicIpUpdateTopic"
+            }
+        }
+    }
+}

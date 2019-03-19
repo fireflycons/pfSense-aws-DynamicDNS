@@ -2,6 +2,8 @@
 
 Whilst this is a guide to configuring Dynamic DNS (DDNS) on pfSense because that's what I use, the CloudFormation template creates an IAM user with the correct permissions to generically perform a DNS update so can be used for any DDNS provision that supports AWS. Even roll your own with aws cli or one of the SDKs.
 
+Also included in this repository is a [PowerShell Lambda project](./DynamicIPWatcher) which will track your dynmaically updated DNS records in Route 53 and update security groups in your AWS account with detected changes.
+
 # What is Dynamic DNS
 
 [Dynamic DNS](https://en.wikipedia.org/wiki/Dynamic_DNS) is a service that translates your external IP Address into an URL like yourcompany.dyndns.org
