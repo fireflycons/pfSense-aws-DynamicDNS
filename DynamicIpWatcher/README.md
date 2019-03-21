@@ -33,10 +33,11 @@ This assumes you have already set up at least one DNS record you wish to track i
 
 To build and deploy, perform the following steps
 
-1. Examine `deploy.json`. The very first property is the name of the CloudFormation stack that will be created from the included template. You may want to change that.
-1. Still in `deploy.json` examine the environment settings for `DynamicIpWatcherLambda`. Here you will want to set the fully qualified domain name of the DNS record(s) you are tracking in the variable `HOST_NAMES`. This is a comma separated list of FQDNs.
-1. Finally in `deploy.json` you may want to set the value of `SSM_KEY_PATH`. This is the root key in SSM Parameter Store under which the current IP address of tracked records is stored between invocations of the lambda.
-1. Import the `AWSPowerShell.netcore` module and use `Set-AWSCredential` to authenticate with credentials for the AWS account to which you will deploy this project.
+1. Examine `deploy.json`:
+    * The very first property is the name of the CloudFormation stack that will be created from the included template. You may want to change that.
+    * Examine the environment settings for `DynamicIpWatcherLambda`. Here you will want to set the fully qualified domain name of the DNS record(s) you are tracking in the variable `HOST_NAMES`. This is a comma separated list of FQDNs.
+    * Finally, you may want to set the value of `SSM_KEY_PATH`. This is the root key in SSM Parameter Store under which the current IP address of tracked records is stored between invocations of the lambda.
+1. Import the `AWSPowerShell.netcore` module and use `Set-AWSCredential` to authenticate with credentials for the AWS account to which you will deploy this project. Run `Set-DefaultAWSRegion` if needed to set the region into which the stack will be deployed.
 1. Run `build.ps1` which will run the pester tests, package the lambda functions if they have changed, deploy or update the CloudFormation stack, and finally deploy the lambda payloads on first build, or if they have changed.
 
 Once that's finished you will have a fully functional system that will respond to changes in IP address of the tracked records within 5 minutes, and will update all security groups in the region to which the CloudFormation was deployed with any change to the watched hosts.
